@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dự đoán chữ</title>
+    <style>
+      h1 {
+        width: 100%;
+        text-align: center;
+      }
+      canvas{
+        border:1px solid black;
+        width: 300px;
+        height: 300px;
+        margin: auto;
+        display: block;
+        padding: 0;
+      }
+    </style>
+</head>
+<body>
+    <h1>Dự đoán chữ</h1>
+    <canvas id="canvas" width="300" height="300"></canvas>
+    <br>
+    <div align="center">
+        <h5 id="predict"> Mời bạn vẽ! </h5>
+        <button onclick="clearCanvas()">Clear</button>
+        <button onclick="sendCanvas()">Submit</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        let painting = false;
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        canvas.addEventListener("mousedown", (event) => {
+            painting = true;
+            ctx.beginPath();
+            ctx.moveTo(event.offsetX, event.offsetY);
+        });
+
+        canvas.addEventListener("mouseup", () => {
+            painting = false;
+            ctx.beginPath();
+        });
+
+        canvas.addEventListener("mousemove", draw);
+
+        function draw(event) {
+            if (!painting) return;
+            ctx.lineWidth = 10;
+            ctx.lineCap = "round";
+            ctx.strokeStyle = "black";
+
+            ctx.lineTo(event.offsetX, event.offsetY);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(event.offsetX, event.offsetY);
+        }
+
+        function clearCanvas() {
+            window.location.reload();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "white"
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            painting = false;
+        }
+
+        function sendCanvas() {
+            const dataURL = canvas.toDataURL("image/png");
+            console.log(dataURL);
+            fetch("/", {
+                method: "POST",
+                body: dataURL
+            })
+                .then(response => response.text())
+                .then(predict => {
+                console.log("Dữ liệu từ server:", predict);
+                document.getElementById("predict").innerText = `Kết quả là ${predict}`;
+                })
+                .catch(error => console.error("Lỗi khi gửi ảnh:", error));
+        }
+    </script>
+</body>
+</html>
