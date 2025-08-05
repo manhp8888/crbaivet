@@ -2,39 +2,43 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Dự đoán chữ</title>
+    <title>Dự đoán chữ viết tay</title>
     <style>
-      h1 {
-        text-align: center;
-      }
-      canvas {
-        border: 1px solid black;
-        width: 300px;
-        height: 300px;
-        display: block;
-        margin: auto;
-        background-color: white;
-      }
+        h1 { text-align: center; }
+        canvas {
+            border: 1px solid black;
+            background-color: white;
+            display: block;
+            margin: auto;
+        }
+        #container {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <h1>Dự đoán chữ viết tay</h1>
-    <canvas id="canvas" width="300" height="300"></canvas>
-    <br>
-    <div align="center">
-        <h3 id="predict">Mời bạn vẽ một chữ cái!</h3>
-        <button onclick="clearCanvas()">Clear</button>
-        <button onclick="sendCanvas()">Submit</button>
+    <div id="container">
+        <canvas id="canvas" width="300" height="300"></canvas>
+        <br>
+        <form method="POST" action="/" id="predict-form">
+            <input type="hidden" name="image" id="image">
+            <h3 id="predict">{{ predict if predict else "Mời bạn vẽ chữ!" }}</h3>
+            <button type="button" onclick="clearCanvas()">Clear</button>
+            <button type="submit">Submit</button>
+        </form>
     </div>
 
     <script>
         const canvas = document.getElementById("canvas");
         const ctx = canvas.getContext("2d");
-        let painting = false;
+        const imageInput = document.getElementById("image");
 
-        // Fill trắng canvas lúc đầu
+        // Khởi tạo nền trắng
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        let painting = false;
 
         canvas.addEventListener("mousedown", (e) => {
             painting = true;
@@ -44,45 +48,29 @@
 
         canvas.addEventListener("mouseup", () => {
             painting = false;
-            ctx.beginPath();
         });
 
-        canvas.addEventListener("mousemove", draw);
-
-        function draw(e) {
+        canvas.addEventListener("mousemove", (e) => {
             if (!painting) return;
             ctx.lineWidth = 15;
             ctx.lineCap = "round";
             ctx.strokeStyle = "black";
             ctx.lineTo(e.offsetX, e.offsetY);
             ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(e.offsetX, e.offsetY);
-        }
+        });
 
         function clearCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            document.getElementById("predict").innerText = "Mời bạn vẽ một chữ cái!";
+            document.getElementById("predict").innerText = "Mời bạn vẽ chữ!";
         }
 
-        function sendCanvas() {
+        // Trước khi gửi, lấy ảnh base64 và gán vào input hidden
+        document.getElementById("predict-form").addEventListener("submit", function (e) {
             const dataURL = canvas.toDataURL("image/png");
-
-            fetch("/", {
-                method: "POST",
-                body: dataURL
-            })
-            .then(response => response.text())
-            .then(predict => {
-                document.getElementById("predict").innerText = `Kết quả: ${predict}`;
-            })
-            .catch(err => {
-                document.getElementById("predict").innerText = "Lỗi khi gửi dữ liệu.";
-                console.error(err);
-            });
-        }
+            imageInput.value = dataURL;
+        });
     </script>
 </body>
 </html>
